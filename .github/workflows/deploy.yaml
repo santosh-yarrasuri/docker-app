@@ -3,22 +3,21 @@ on:
   push:
     branches:
       - master
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Build the Docker image
-        run: docker build -t santosh/docker -f Dockerfile.dev .
-        run: docker run -e CI=true santosh/docker npm test
+      - uses: actions/checkout@v2
+      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker build -t santoshyarrasuri/docker -f Dockerfile.dev .
+      - run: docker run -e CI=true santoshyarrasuri/docker npm test
 
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
 
       - name: Deploy to EB
-        run: docker build -t santosh/docker-deploy .
-        uses: santosh/docker-deploy
+        uses: santoshyarrasuri/docker:latest
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
           aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
