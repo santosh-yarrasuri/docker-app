@@ -1,0 +1,30 @@
+name: Deploy Frontend
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: docker build -t santosh/docker -f Dockerfile.dev .
+        run: docker run -e CI=true santosh/docker npm test
+
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+
+      - name: Deploy to EB
+        run: docker build -t santosh/docker-deploy .
+        uses: santosh/docker-deploy
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+          application_name: docker
+          environment_name: Docker-env
+          existing_bucket_name: elasticbeanstalk-us-east-1-534016637452
+          region: us-east-1
+          version_label: ${{ github.sha }}
+          deployment_package: deploy.zip
